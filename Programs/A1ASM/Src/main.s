@@ -37,7 +37,7 @@ main
 
     ; Set LED
     STRB    R0, [R6]   ; switch on LED D08
-    STRB    R1, [R6]    ; switch on LED D09
+    STRB    R1, [R6]    ; switch on LED D09 (Aufgabe_1 bearbeitet)
     b .
     
     ALIGN
