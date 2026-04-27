@@ -36,12 +36,8 @@ main
     MOV     R3, #0x80           ; load mask 0b1000
 
     ; Set LED
-    STRB    R0, [R6]    ; switch on LED D08
-    STRB    R0, [R7]    ; switch off LED D08
-    STRB    R0, [R6]    ; switch on LED D08
+    STRB    R0, [R6]   ; switch on LED D08
     STRB    R1, [R6]    ; switch on LED D09
-    STRB    R2, [R7]    ; switch off LED D14
-    STRB    R3, [R7]    ; switch off LED D15
     b .
     
     ALIGN
