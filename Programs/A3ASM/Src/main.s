@@ -3,74 +3,58 @@
 ;************************************************
                    AREA MyData, DATA, align = 2
 Base
-VariableA          DCW 0x1234
-VariableB          DCW 0x4711
+; reserviere 1000 bytes im Speicher für das Ergebnis in einem Feld
+; Speichern der Startadresse des Ergebnis Felds in R0
+; Speichern von 0x2 in einem Register R1.
+; Weise der Speicheradresse des Feldes 1 Byte mit Nullen zu
 
-VariableC          DCD  0
+; Speichere den Wert R1 in R2
 
-MeinHalbwortFeld   DCW 0x22 , 0x3e , -52, 78 , 0x27 , 0x45
+;loop 1
+    ; R1 = R1 + R1
+    ; Speicheradresse R0 + R1 wird auf 00000001 gesetzt
+    ; ist R1 grösser als 1000:
+        ;ja: springe zu x
+        ;nein: springe zu loop 1
 
-MeinWortFeld       DCD 0x12345678 , 0x9dca5986
-                   DCD -872415232 , 1308622848
-                   DCD 0x27000000
-                   DCD 0x45000000
+; ERGEBNISFELD anlegen mit DCW gespeichert in R8
 
-MeinTextFeld       DCB "ABab0123",0
+; STARTFELDADRESSE gespeichert in R0
+; INDEXWERT gespeichert in R1 - wird am Anfang gesetzt auf 0x1
+; VIELFACHES gespeichert in R2 - wird am Anfang nicht gesetzt
 
-                   EXPORT VariableA
-                   EXPORT VariableB
-                   EXPORT VariableC
-                   EXPORT MeinHalbwortFeld
-                   EXPORT MeinWortFeld
-                   EXPORT MeinTextFeld
 
-;***********************************************
-;* Beginn des Programms *
-;************************************************
-    AREA |.text|, CODE, READONLY, ALIGN = 3
-; ----- S t a r t des Hauptprogramms -----
-                EXPORT main
-                EXTERN initITSboard
-main            PROC
-                bl    initITSboard                 ; HW Initialisieren
+; SIEB
 
-; Laden von Konstanten in Register
-                mov   r0,#0x12                      ; Anw-01: Schreibt 0x12 in r0
-                mov   r1,#-128                      ; Anw-02: Schreibt -128 als 2er-Komplement in r1
-                ldr   r2,=0x12345678                ; Anw-03: Schreibt 0x12345678 in r2
+; LOOP 1 (INDEXSCHLEIFE)
+    ; R1 = R1 + 0x1
+    ; R2 = R1 * R1
+    ; IST INDEX R1 grösser 1000: Springe zu ENDE
+    ; IST Speicheradresse R0 + R1 == 0b00000000: Springe zu LOOP 1
 
-; Zugriff auf Variable
-                ldr   r0,=VariableA                 ; Anw-04: schreibt Speicheradresse von VariableA in r0
-                                                    ;        (ldr ist Pseudoanweisung, hier entscheidet sich der Assembler für mov)
-                ldrh  r1,[r0]                       ; Anw-05: lädt LS-Halbwort aus Adresse aus r0, in r1
-                ldr   r2,[r0]                       ; Anw-06: schreibt wort aus Adresse aus r0 in r2 (Wort bzw. 32bit ist default von ldr) 
-                str   r2,[r0,#VariableC-VariableA]  ; Anw-07: schreibt Wort aus r2 an: Adresse aus r0 + (VariableC-VariableA * Bytes) 
+    ; LOOP 2 (VIELFACHE)
+    ; IST R2 grösser als 1000: Springe zu LOOP 1
+    ; R2 = R2 + R1
+    ; Speicheradresse STARTFELDADRESSE + R2 = 0b00000001
+    ; Springe zu LOOP 2
+    
 
-; Zugriff auf Felder (Speicherzellen)
-                ldr   r0,=MeinHalbwortFeld          ; Anw-08: schreibt Adresse von MeinHalbwortFeld in r0
-                ldrh  r1,[r0]                       ; Anw-09: schreibt halbwort(ls 16bit) aus Adresse aus r0 in r1
-                ldrh  r2,[r0,#2]                    ; Anw-10: verschiebt LSB in Adresse aus r0 um 2 Bytes nach "rechts" und nimmt das dortige ls-Halbwort und schreibt es in r2 
-                mov   r3,#10                        ; Anw-11: Schreibt 10 in r3 (Bits ?)
-                ldrh  r4,[r0,r3]                    ; Anw-12: Schreibt ls-Halbwort aus Adresse r0 + (r3*Bytes) in r4
 
-                ldrh  r5,[r0,#2]!                   ; Anw-13: Schreibt Halbwort aus Adresse r0 + 2 Bytes(2*8bit) in r5 und erhöht r0 um 2 Bytes.
-                ldrh  r6,[r0,#2]!                   ; Anw-14: Schreibt Halbwort aus Adresse r0 + 2 Bytes(2*8bit) in r6 und erhöht r0 um 2 Bytes.
-                strh  r6,[r0,#2]!                   ; Anw-15: Schreibt Halbwort aus r6 an um 2 Bytes erhöhte Adresse aus r0 und erhöht Adresse aus r0 um 2 Bytes.
 
-; Addition und Subtraktion von unsigned / signed Integer-Werten
-                ldr  r0,=MeinWortFeld               ; Anw-16: schreibt Adresse von MeinWortFeld in r0
-                ldr  r1,[r0]                        ; Anw-17: schreibt Wort aus Adresse aus r0 in r1
-                ldr  r2,[r0,#4]                     ; Anw-18: schreibt Wort aus Adresse aus r0 + 4 Bytes in r2
-                adds r3,r1,r2                       ; Anw-19: Schreibt die Summe von r1 und r2 in r3, setzt die Flags entsprechend (unsigned addition(v-Flag))
+; SPEICHER
+; SETZE R9 auf die STARTADRESSE R0 - 0x1
 
-                ldr  r4,[r0,#8]                     ; Anw-20: Schreibt Wort aus Adresse aus r0 + 8 Bytes(lsb 8 Bytes später) in r4
-                ldr  r5,[r0,#12]                    ; Anw-21: Schreibt Wort aus Adresse aus r0 + 12 Bytes in r5
-                subs r6,r4,r5                       ; Anw-22: Schreibt die Differenz von r4 und r5 in r6, setzt die Flags entsprechend (unsigned subtraction(c-Flag))
+; LOOP 3
+; IST R9 == R0 + 1000: SPRINGE zu END
+; R9 = R9 + 0x1
+; IST R9 == 0b00000001: springe zu LOOP 3
+; R10 = R9 - R0
+; Speicher R8 & erhöhe R8 um 0x2
+; Springe zu LOOP 3
 
-                ldr  r7,[r0,#16]                    ; Anw-23: Schreibt Wort aus Adresse aus r0 + 16 Bytes in r7
-                ldr  r8,[r0,#20]                    ; Anw-24: Schreibt Wort aus Adresse aus r0 + 20 Bytes in r8
-                subs r9,r7,r8                       ; Anw-25: Schreibt die Differenz von r7 und r8 in r9)
 
-forever         b   forever                         ; Anw-26
-                ENDP
-                END
+
+
+
+
+; ENDE
