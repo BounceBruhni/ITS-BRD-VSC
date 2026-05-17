@@ -3,6 +3,11 @@
 ;************************************************
                    AREA MyData, DATA, align = 2
 Base
+
+;00000001 steht für nicht prim
+;00000000 steht für prim
+;sonst müssten wir erst mal in alle felder 00000001 eintragen(wäre ineffizienter)
+
 ; reserviere 1000 bytes im Speicher für das Ergebnis in einem Feld
 ; Speichern der Startadresse des Ergebnis Felds in R0
 ; Speichern von 0x2 in einem Register R1.
